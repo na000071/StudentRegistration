@@ -1,0 +1,120 @@
+﻿@page
+@model Lab2.Pages.RegistrationModel
+@using AcademicManagement
+
+@{
+    ViewData["Title"] = "Registration";
+}
+
+<h1 class="mb-4">Registration</h1>
+<hr class="mb-4" />
+
+<form method="post">
+
+    <!-- Student selection row -->
+    <div class="row align-items-end mb-3">
+        <div class="col-md-6">
+            <label class="form-label">Select Student</label>
+            <select class="form-select" asp-for="SelectedStudentId">
+                <option value="0">-- Select Student --</option>
+                @foreach (var student in Model.Students)
+                {
+                    <option value="@student.StudentId">
+                        @student.StudentName
+                    </option>
+                }
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <button type="submit"
+                    class="btn btn-primary w-100"
+                    asp-page-handler="StudentSelected">
+                Get Registrations
+            </button>
+        </div>
+    </div>
+
+    <!-- Informational line when student has no registrations (hidden when an error is present) -->
+    @if (!string.IsNullOrEmpty(Model.SelectedStudentId) && Model.SelectedStudentId != "0" &&
+        (Model.AcademicRecords == null || Model.AcademicRecords.Count ==0) &&
+        string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-info">
+            The student has not registered to any course, select course to register.
+        </div>
+    }
+
+    <!-- Success line when student has registered courses -->
+    @if (!string.IsNullOrEmpty(Model.SelectedStudentId) && Model.SelectedStudentId != "0" &&
+        (Model.AcademicRecords != null && Model.AcademicRecords.Count >0))
+    {
+        var studentName = Model.Students.FirstOrDefault(s => s.StudentId == Model.SelectedStudentId)?.StudentName ?? "The student";
+        <div class="alert alert-success">
+            <strong>@studentName</strong> has registered for the following courses:
+        </div>
+    }
+
+    <!-- Error message -->
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger">
+            @Model.ErrorMessage
+        </div>
+    }
+
+    <!-- Registered courses -->
+    @if (Model.AcademicRecords != null && Model.AcademicRecords.Count >0)
+    {
+        <h4>Registered Courses</h4>
+        <ul class="list-group mb-3">
+            @foreach (var record in Model.AcademicRecords)
+            {
+                <li class="list-group-item">
+                    @* Show course code and title if available *@
+                    @record.CourseCode
+                    @{
+                        var matching = Model.Courses?.FirstOrDefault(c => c.CourseCode == record.CourseCode);
+                        if (matching != null)
+                        {
+                            <span> - @matching.CourseTitle</span>
+                        }
+                    }
+                </li>
+            }
+        </ul>
+    }
+
+    <!-- Available courses: only show when the student has no registered courses -->
+    @if ((Model.AcademicRecords == null || Model.AcademicRecords.Count ==0) && Model.Courses != null && Model.Courses.Count >0)
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Course Code</th>
+                    <th>Course Title</th>
+                    <th>Check to Register</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var course in Model.Courses)
+                {
+                    <tr>
+                        <td>@course.CourseCode</td>
+                        <td>@course.CourseTitle</td>
+                        <td>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="SelectedCourseCodes" value="@course.CourseCode" id="chk_@course.CourseCode" />
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="d-flex justify-content-start">
+            <button type="submit" class="btn btn-success" asp-page-handler="Register">Register</button>
+        </div>
+    }
+
+</form>
